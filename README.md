@@ -128,4 +128,3 @@ College-Management-Website/
 - **Icons**: Font Awesome 6.5
 - **Fonts**: Google Fonts (Inter + Montserrat)
 - **Maps**: Google Maps embed iframe
-# College-Management-Website
