@@ -1,4 +1,4 @@
-# Institution Lumina – Smt T.K.R. Polytechnic Website
+Smt T.K.R. Polytechnic Website
 
 A fully responsive, static, front-end college website for **Smt T.K.R. Polytechnic, Pamarru** built with semantic HTML5, pure CSS3, and vanilla JavaScript.
 
