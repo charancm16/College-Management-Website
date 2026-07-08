@@ -230,25 +230,103 @@
     });
   }
 
-  // ── Contact Form (Mockup) ──
+  // ── Contact Form → Flask /api/contact ──
   function initContactForm() {
     const form = document.querySelector('#contact-form');
     if (!form) return;
 
-    form.addEventListener('submit', (e) => {
+    // ── Create a reusable toast ──
+    const toast = document.createElement('div');
+    toast.id = 'form-toast';
+    toast.style.cssText = [
+      'position:fixed', 'bottom:32px', 'right:32px', 'z-index:9999',
+      'padding:18px 28px', 'border-radius:12px',
+      'font-family:Inter,sans-serif', 'font-size:0.92rem', 'font-weight:600',
+      'box-shadow:0 8px 30px rgba(0,0,0,0.14)',
+      'display:flex', 'align-items:center', 'gap:12px',
+      'transform:translateY(20px)', 'opacity:0',
+      'transition:all 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+      'pointer-events:none', 'max-width:360px'
+    ].join(';');
+    document.body.appendChild(toast);
+
+    function showToast(message, isSuccess) {
+      toast.style.background  = isSuccess ? '#1a7f4b' : '#c0392b';
+      toast.style.color       = '#fff';
+      toast.innerHTML = `<i class="fas fa-${isSuccess ? 'check-circle' : 'exclamation-circle'}"></i> ${message}`;
+      toast.style.opacity   = '1';
+      toast.style.transform = 'translateY(0)';
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => {
+        toast.style.opacity   = '0';
+        toast.style.transform = 'translateY(20px)';
+      }, 4000);
+    }
+
+    // ── Remove existing inline error messages ──
+    function clearErrors() {
+      form.querySelectorAll('.field-error').forEach(el => el.remove());
+      form.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+    }
+
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      clearErrors();
 
-      const btn = form.querySelector('button[type="submit"]');
-      const originalText = btn.innerHTML;
+      const btn           = form.querySelector('button[type="submit"]');
+      const originalHTML  = btn.innerHTML;
 
-      btn.innerHTML = '<i class="fas fa-check"></i> Message Sent!';
-      btn.style.background = '#28a745';
+      // Loading state
+      btn.disabled   = true;
+      btn.innerHTML  = '<i class="fas fa-spinner fa-spin"></i> &nbsp;Sending…';
+      btn.style.opacity = '0.8';
 
-      setTimeout(() => {
-        btn.innerHTML = originalText;
-        btn.style.background = '';
-        form.reset();
-      }, 2500);
+      const payload = {
+        name:    form.querySelector('#contact-name').value,
+        email:   form.querySelector('#contact-email').value,
+        subject: form.querySelector('#contact-subject').value,
+        message: form.querySelector('#contact-message').value,
+      };
+
+      try {
+        const res  = await fetch('/api/contact', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(payload),
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          // ── Success ──
+          btn.innerHTML  = '<i class="fas fa-check"></i> &nbsp;Sent!';
+          btn.style.background = '#1a7f4b';
+          btn.style.opacity    = '1';
+          showToast(data.message || 'Message sent successfully!', true);
+          form.reset();
+
+          setTimeout(() => {
+            btn.innerHTML        = originalHTML;
+            btn.style.background = '';
+            btn.disabled         = false;
+          }, 3000);
+
+        } else {
+          // ── Validation / Server errors ──
+          const errors = data.errors || ['Something went wrong. Please try again.'];
+          errors.forEach(err => showToast(err, false));
+
+          btn.innerHTML     = originalHTML;
+          btn.style.opacity = '1';
+          btn.disabled      = false;
+        }
+
+      } catch (networkErr) {
+        showToast('Network error – make sure the Flask server is running.', false);
+        btn.innerHTML     = originalHTML;
+        btn.style.opacity = '1';
+        btn.disabled      = false;
+      }
     });
   }
 
